@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.androidappdevelopmentusinggenai_namma_shaaleinventory.ui.AssetViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     viewModel: AssetViewModel,
@@ -43,6 +45,12 @@ fun DashboardScreen(
 
     Scaffold(
         containerColor = Color(0xFF0F172A), // Modern Dark Background
+        topBar = {
+            TopAppBar(
+                title = { Text("Inventory Auditor", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f)) },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+            )
+        },
         floatingActionButton = {
             if (selectedInstitution == null) {
                 ExtendedFloatingActionButton(
@@ -81,6 +89,14 @@ fun DashboardScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        val greeting = remember {
+                            val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+                            when (hour) {
+                                in 0..11 -> "Good Morning"
+                                in 12..16 -> "Good Afternoon"
+                                else -> "Good Evening"
+                            }
+                        }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = selectedInstitution?.name ?: "Namma-Shaale",
@@ -90,7 +106,7 @@ fun DashboardScreen(
                                 lineHeight = 32.sp
                             )
                             Text(
-                                text = if (selectedInstitution != null) "Active Audit Session" else "Digital Asset Auditor",
+                                text = if (selectedInstitution != null) "Active Audit Session" else greeting,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = Color.White.copy(alpha = 0.8f)
                             )
@@ -181,7 +197,7 @@ fun DashboardScreen(
                         MenuCard(
                             title = "View Inventory",
                             subtitle = "Audit & Health",
-                            icon = Icons.Default.List,
+                            icon = Icons.AutoMirrored.Filled.List,
                             color = Color(0xFF818CF8),
                             modifier = Modifier.weight(1f),
                             onClick = onNavigateToList
@@ -407,9 +423,9 @@ fun MenuCard(
     subtitle: String,
     icon: ImageVector,
     color: Color,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    onClick: () -> Unit
+    enabled: Boolean = true
 ) {
     Surface(
         modifier = modifier

@@ -20,7 +20,10 @@ data class Asset(
     val name: String,
     val serialNumber: String,
     val category: String,
+    val location: String = "General", // e.g., Room 10A, Science Lab
     val condition: String,
+    val priority: String = "Medium", // Low, Medium, High
+    val estimatedRepairCost: Double? = null,
     val note: String? = null,
     val photoUri: String? = null,
     val institutionId: Int = 0, // Link to Institution

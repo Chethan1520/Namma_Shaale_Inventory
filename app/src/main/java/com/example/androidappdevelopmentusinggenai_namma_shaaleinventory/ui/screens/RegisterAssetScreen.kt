@@ -44,7 +44,11 @@ fun RegisterAssetScreen(
     var name by remember { mutableStateOf("") }
     var serialNumber by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("General") }
+    var customCategory by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
     var condition by remember { mutableStateOf("Working") }
+    var priority by remember { mutableStateOf("Medium") }
+    var estimatedRepairCost by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     
     var currentPhotoUri by remember { mutableStateOf(capturedPhotoUri) }
@@ -96,7 +100,7 @@ fun RegisterAssetScreen(
         }
     }
     
-    val categories = listOf("General", "Lab", "Sports", "IT", "Classroom")
+    val categories = listOf("General", "Lab", "Sports", "IT", "Classroom", "Other")
     val conditions = listOf("Working", "Needs Repair", "Broken")
 
     Scaffold(
@@ -219,6 +223,16 @@ fun RegisterAssetScreen(
             )
 
             OutlinedTextField(
+                value = location,
+                onValueChange = { location = it },
+                label = { Text("Room / Location") },
+                placeholder = { Text("e.g., Science Lab, Room 10A") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                leadingIcon = { Icon(Icons.Default.Place, contentDescription = null, tint = MaterialTheme.colorScheme.secondary) }
+            )
+
+            OutlinedTextField(
                 value = serialNumber,
                 onValueChange = { serialNumber = it },
                 label = { Text("Serial Number / Tag ID") },
@@ -250,8 +264,45 @@ fun RegisterAssetScreen(
                     categories.forEach { cat ->
                         FilterChip(
                             selected = category == cat,
-                            onClick = { category = cat },
+                            onClick = { 
+                                category = cat
+                                if (cat != "Other") customCategory = ""
+                            },
                             label = { Text(cat) },
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                }
+
+                if (category == "Other") {
+                    OutlinedTextField(
+                        value = customCategory,
+                        onValueChange = { customCategory = it },
+                        label = { Text("Enter Custom Category / Department") },
+                        placeholder = { Text("e.g., Computer Network Lab, DDCO Lab") },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) }
+                    )
+                }
+            }
+
+            Column {
+                Text(
+                    text = "Priority Level",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("Low", "Medium", "High").forEach { p ->
+                        FilterChip(
+                            selected = priority == p,
+                            onClick = { priority = p },
+                            label = { Text(p) },
                             shape = RoundedCornerShape(12.dp)
                         )
                     }
@@ -292,6 +343,18 @@ fun RegisterAssetScreen(
                 }
             }
 
+            if (condition != "Working") {
+                OutlinedTextField(
+                    value = estimatedRepairCost,
+                    onValueChange = { if (it.all { char -> char.isDigit() || char == '.' }) estimatedRepairCost = it },
+                    label = { Text("Estimated Repair Cost (Optional) (₹)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                    leadingIcon = { Icon(Icons.Default.CurrencyRupee, contentDescription = null) }
+                )
+            }
+
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
@@ -307,7 +370,19 @@ fun RegisterAssetScreen(
             Button(
                 onClick = {
                     if (name.isNotBlank()) {
-                        viewModel.addAsset(name, serialNumber, category, condition, note.ifBlank { null }, currentPhotoUri, localSelectedInst?.id)
+                        val finalCategory = if (category == "Other" && customCategory.isNotBlank()) customCategory else category
+                        viewModel.addAsset(
+                            name = name,
+                            serialNumber = serialNumber,
+                            category = finalCategory,
+                            location = location.ifBlank { "General" },
+                            condition = condition,
+                            priority = priority,
+                            estimatedRepairCost = estimatedRepairCost.toDoubleOrNull(),
+                            note = note.ifBlank { null },
+                            photoUri = currentPhotoUri,
+                            institutionId = localSelectedInst?.id
+                        )
                         onAssetSaved()
                     }
                 },

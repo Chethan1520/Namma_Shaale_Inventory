@@ -48,6 +48,14 @@ fun InventoryApp(viewModel: AssetViewModel) {
             startDestination = "dashboard",
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("login") {
+                LoginScreen(onLoginSuccess = { role ->
+                    viewModel.setUserRole(role)
+                    navController.navigate("dashboard") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                })
+            }
             composable("dashboard") {
                 DashboardScreen(
                     viewModel = viewModel,

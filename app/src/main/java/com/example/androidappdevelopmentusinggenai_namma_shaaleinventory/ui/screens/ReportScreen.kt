@@ -47,6 +47,7 @@ fun ReportScreen(
     val reportText = remember(assets, total, repair, institutionName) {
         val broken = assets.count { it.condition == "Broken" }
         val working = assets.count { it.condition == "Working" }
+        val totalCost = assets.sumOf { it.estimatedRepairCost ?: 0.0 }
         """
         AUDIT REPORT: $institutionName
         Generated: ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date())}
@@ -56,9 +57,10 @@ fun ReportScreen(
         - Functional Units: $working
         - Maintenance Required: $repair
         - Beyond Repair: $broken
+        - Total Estimated Repair Budget: ₹$totalCost
         
         INVENTORY LOG:
-        ${assets.joinToString("\n") { "[${it.condition}] ${it.name} - ${it.serialNumber}" }}
+        ${assets.joinToString("\n") { "[${it.condition}] ${it.name} - ${it.location} - S/N: ${it.serialNumber}" }}
         
         End of Report.
         """.trimIndent()

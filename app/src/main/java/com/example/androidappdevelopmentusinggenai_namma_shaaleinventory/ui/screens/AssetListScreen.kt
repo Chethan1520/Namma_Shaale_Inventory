@@ -297,12 +297,26 @@ fun AssetItem(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${asset.category} • S/N: ${asset.serialNumber}",
+                        text = "${asset.category} • ${asset.location} • S/N: ${asset.serialNumber}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Gray
                     )
                 }
-                ConditionBadge(condition = asset.condition)
+                Column(horizontalAlignment = Alignment.End) {
+                    ConditionBadge(condition = asset.condition)
+                    if (asset.condition != "Working") {
+                        Text(
+                            text = "Priority: ${asset.priority}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = when(asset.priority) {
+                                "High" -> Color(0xFFF44336)
+                                "Medium" -> Color(0xFFFF9800)
+                                else -> Color(0xFF4CAF50)
+                            },
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             // Photo Preview (if exists)

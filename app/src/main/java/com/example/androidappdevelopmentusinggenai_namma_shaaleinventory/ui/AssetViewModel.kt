@@ -11,6 +11,17 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class AssetViewModel(private val repository: AssetRepository) : ViewModel() {
 
+    private val _userRole = MutableStateFlow<String?>("Principal")
+    val userRole = _userRole.asStateFlow()
+
+    fun setUserRole(role: String) {
+        _userRole.value = role
+    }
+
+    fun logout() {
+        _userRole.value = null
+    }
+
     private val _selectedInstitutionId = MutableStateFlow<Int?>(null)
     val selectedInstitutionId = _selectedInstitutionId.asStateFlow()
 
@@ -55,14 +66,28 @@ class AssetViewModel(private val repository: AssetRepository) : ViewModel() {
         }
     }
 
-    fun addAsset(name: String, serialNumber: String, category: String, condition: String, note: String? = null, photoUri: String? = null, institutionId: Int? = null) {
+    fun addAsset(
+        name: String, 
+        serialNumber: String, 
+        category: String, 
+        location: String,
+        condition: String, 
+        priority: String,
+        estimatedRepairCost: Double?,
+        note: String? = null, 
+        photoUri: String? = null, 
+        institutionId: Int? = null
+    ) {
         viewModelScope.launch {
             val finalId = institutionId ?: _selectedInstitutionId.value ?: 0
             val newAsset = Asset(
                 name = name,
                 serialNumber = serialNumber,
                 category = category,
+                location = location,
                 condition = condition,
+                priority = priority,
+                estimatedRepairCost = estimatedRepairCost,
                 note = note,
                 photoUri = photoUri,
                 institutionId = finalId
