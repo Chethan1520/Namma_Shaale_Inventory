@@ -28,4 +28,4 @@
 *   **Accountability:** Building a culture of "Asset Care" within the public school system through transparent reporting.
 
 ---
-*Developed as part of the MindMatrix VTU Internship Program.*
+
