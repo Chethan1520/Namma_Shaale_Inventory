@@ -8,5 +8,6 @@ data class Institution(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val name: String,
     val location: String? = null,
+    val userEmail: String = "", // Link to User
     val createdAt: Long = System.currentTimeMillis()
 )

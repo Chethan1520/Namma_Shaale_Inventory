@@ -6,5 +6,5 @@ import com.example.androidappdevelopmentusinggenai_namma_shaaleinventory.data.As
 
 class InventoryApplication : Application() {
     val database by lazy { AppDatabase.getDatabase(this) }
-    val repository by lazy { AssetRepository(database.assetDao()) }
+    val repository by lazy { AssetRepository(database.assetDao(), database.userDao()) }
 }

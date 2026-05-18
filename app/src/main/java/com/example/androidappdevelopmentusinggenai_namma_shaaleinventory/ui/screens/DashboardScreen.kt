@@ -32,7 +32,8 @@ fun DashboardScreen(
     onNavigateToRegister: () -> Unit,
     onNavigateToList: () -> Unit,
     onNavigateToReport: () -> Unit,
-    onNavigateToRepairList: () -> Unit
+    onNavigateToRepairList: () -> Unit,
+    onLogout: () -> Unit
 ) {
     val totalAssets by viewModel.totalAssetsCount.collectAsState()
     val needsRepair by viewModel.repairAssetsCount.collectAsState()
@@ -48,6 +49,14 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Inventory Auditor", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f)) },
+                actions = {
+                    TextButton(onClick = { 
+                        viewModel.logout()
+                        onLogout() 
+                    }) {
+                        Text("Logout", color = Color(0xFFF87171))
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },

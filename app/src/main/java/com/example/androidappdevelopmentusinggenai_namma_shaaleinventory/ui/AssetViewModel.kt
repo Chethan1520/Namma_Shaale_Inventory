@@ -11,6 +11,44 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 class AssetViewModel(private val repository: AssetRepository) : ViewModel() {
 
+    private val _currentUser = MutableStateFlow<User?>(null)
+    val currentUser = _currentUser.asStateFlow()
+
+    fun registerUser(user: User, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.registerUser(user)
+                onResult(true, "Registration Successful")
+            } catch (e: Exception) {
+                onResult(false, "User already exists or error occurred")
+            }
+        }
+    }
+
+    fun loginUser(email: String, password: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val user = repository.getUserByEmail(email)
+            if (user != null && user.passwordHash == password) {
+                _currentUser.value = user
+                onResult(true, "Login Successful")
+            } else {
+                onResult(false, "Invalid Email or Password")
+            }
+        }
+    }
+
+    fun resetPassword(email: String, answer: String, newPass: String, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            val user = repository.getUserByEmail(email)
+            if (user != null && user.securityAnswer.equals(answer, ignoreCase = true)) {
+                repository.updateUser(user.copy(passwordHash = newPass))
+                onResult(true, "Password Reset Successful")
+            } else {
+                onResult(false, "Invalid Email or Security Answer")
+            }
+        }
+    }
+
     private val _userRole = MutableStateFlow<String?>("Principal")
     val userRole = _userRole.asStateFlow()
 
@@ -19,31 +57,43 @@ class AssetViewModel(private val repository: AssetRepository) : ViewModel() {
     }
 
     fun logout() {
+        _currentUser.value = null
         _userRole.value = null
     }
 
     private val _selectedInstitutionId = MutableStateFlow<Int?>(null)
     val selectedInstitutionId = _selectedInstitutionId.asStateFlow()
 
-    val allInstitutions: StateFlow<List<Institution>> = repository.allInstitutions
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val allInstitutions: StateFlow<List<Institution>> = _currentUser.flatMapLatest { user ->
+        if (user != null) repository.getAllInstitutions(user.email)
+        else flow { emit(emptyList<Institution>()) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val selectedInstitution = _selectedInstitutionId.flatMapLatest { id ->
         if (id != null) flow { emit(repository.getInstitutionById(id)) }
         else flow { emit(null) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val allAssets: StateFlow<List<Asset>> = _selectedInstitutionId.flatMapLatest { id ->
-        if (id != null) repository.getAssetsByInstitution(id)
-        else repository.allAssets
+    val allAssets: StateFlow<List<Asset>> = combine(_currentUser, _selectedInstitutionId) { user, instId ->
+        user to instId
+    }.flatMapLatest { (user, instId) ->
+        if (user == null) flow { emit(emptyList<Asset>()) }
+        else if (instId != null) repository.getAssetsByInstitution(instId)
+        else repository.getAllAssets(user.email)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val totalAssetsCount: StateFlow<Int> = _selectedInstitutionId.flatMapLatest { id ->
-        repository.getTotalCount(id)
+    val totalAssetsCount: StateFlow<Int> = combine(_currentUser, _selectedInstitutionId) { user, instId ->
+        user to instId
+    }.flatMapLatest { (user, instId) ->
+        if (user == null) flow { emit(0) }
+        else repository.getTotalCount(instId, user.email)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    val repairAssetsCount: StateFlow<Int> = _selectedInstitutionId.flatMapLatest { id ->
-        repository.getRepairCount(id)
+    val repairAssetsCount: StateFlow<Int> = combine(_currentUser, _selectedInstitutionId) { user, instId ->
+        user to instId
+    }.flatMapLatest { (user, instId) ->
+        if (user == null) flow { emit(0) }
+        else repository.getRepairCount(instId, user.email)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     fun selectInstitution(id: Int) {
@@ -52,7 +102,8 @@ class AssetViewModel(private val repository: AssetRepository) : ViewModel() {
 
     fun addInstitution(name: String) {
         viewModelScope.launch {
-            val id = repository.insertInstitution(Institution(name = name))
+            val user = _currentUser.value ?: return@launch
+            val id = repository.insertInstitution(Institution(name = name, userEmail = user.email))
             _selectedInstitutionId.value = id.toInt()
         }
     }

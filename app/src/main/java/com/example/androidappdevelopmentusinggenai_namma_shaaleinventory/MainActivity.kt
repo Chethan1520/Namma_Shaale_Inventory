@@ -45,27 +45,55 @@ fun InventoryApp(viewModel: AssetViewModel) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "dashboard",
+            startDestination = "splash",
             modifier = Modifier.padding(innerPadding)
         ) {
-            composable("login") {
-                LoginScreen(onLoginSuccess = { role ->
-                    viewModel.setUserRole(role)
-                    navController.navigate("dashboard") {
-                        popUpTo("login") { inclusive = true }
+            composable("splash") {
+                SplashScreen(onNext = {
+                    navController.navigate("login") {
+                        popUpTo("splash") { inclusive = true }
                     }
                 })
+            }
+            composable("login") {
+                LoginScreen(
+                    viewModel = viewModel,
+                    onLoginSuccess = {
+                        navController.navigate("dashboard") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = { navController.navigate("register") },
+                    onNavigateToForgot = { navController.navigate("forgot") }
+                )
+            }
+            composable("register") {
+                RegisterScreen(
+                    viewModel = viewModel,
+                    onNavigateToLogin = { navController.popBackStack() }
+                )
+            }
+            composable("forgot") {
+                ForgotPasswordScreen(
+                    viewModel = viewModel,
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable("dashboard") {
                 DashboardScreen(
                     viewModel = viewModel,
-                    onNavigateToRegister = { navController.navigate("register") },
+                    onNavigateToRegister = { navController.navigate("registerAsset") },
                     onNavigateToList = { navController.navigate("list") },
                     onNavigateToReport = { navController.navigate("report") },
-                    onNavigateToRepairList = { navController.navigate("list?filter=repair") }
+                    onNavigateToRepairList = { navController.navigate("list?filter=repair") },
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo("dashboard") { inclusive = true }
+                        }
+                    }
                 )
             }
-            composable("register") { backStackEntry ->
+            composable("registerAsset") { backStackEntry ->
                 val capturedPhotoUri by backStackEntry.savedStateHandle
                     .getLiveData<String>("photoUri")
                     .observeAsState()
